@@ -1,6 +1,6 @@
 # Google Drive Ownership Transfer
 
-Three Google Apps Scripts for transferring ownership of many Google Workspace files at once, without doing it file by file in the Share dialog.
+Four Google Apps Scripts for transferring ownership of many Google Workspace files at once, without doing it file by file in the Share dialog.
 
 Each script works the same way:
 
@@ -13,7 +13,8 @@ Each script works the same way:
 | --- | --- | --- |
 | [Sheets](#1-sheets-script) — `scripts/transfer_sheet_ownership.gs` | Google Sheets you own | You only need to hand over spreadsheets |
 | [Docs](#2-docs-script) — `scripts/transfer_doc_ownership.gs` | Google Docs you own | You only need to hand over documents |
-| [Drive](#3-drive-script) — `scripts/transfer_drive_ownership.gs` | **Everything** you own in My Drive: folders, Docs, Sheets, Slides, Forms, PDFs, Office files, images and more | You're handing over a whole Drive, or a mix of file types |
+| [Slides](#3-slides-script) — `scripts/transfer_slides_ownership.gs` | Google Slides presentations you own | You only need to hand over presentations |
+| [Drive](#4-drive-script) — `scripts/transfer_drive_ownership.gs` | **Everything** you own in My Drive: folders, Docs, Sheets, Slides, Forms, PDFs, Office files, images and more | You're handing over a whole Drive, or a mix of file types |
 
 > **Everything going to one person?** A Workspace admin can move all of a user's files in one step with the Admin console's data transfer tool. These scripts are for when different files go to different people, or you want to leave some out.
 
@@ -27,7 +28,8 @@ Each script works the same way:
 - [How it works](#how-it-works)
 - [1. Sheets script](#1-sheets-script)
 - [2. Docs script](#2-docs-script)
-- [3. Drive script](#3-drive-script)
+- [3. Slides script](#3-slides-script)
+- [4. Drive script](#4-drive-script)
 - [Using @ people chips](#using--people-chips)
 - [Rules and limitations](#rules-and-limitations)
 - [Troubleshooting](#troubleshooting)
@@ -39,14 +41,14 @@ Each script works the same way:
 
 - You need a **Google Workspace (work or school) account**. New owners must be in the **same organization**.
 - **Test on 2–3 rows first.** Once you've transferred something, only the new owner can transfer it back.
-- Use a **separate, blank spreadsheet for each script.** The Sheets and Docs scripts both use a tab called `Ownership Transfer`, so putting both in one spreadsheet would overwrite your list.
+- Use a **separate, blank spreadsheet for each script.** The Sheets, Docs and Slides scripts all use a tab called `Ownership Transfer`, so putting two of them in one spreadsheet would overwrite your list.
 
 ## Setup (all scripts)
 
 1. Create a new blank Google Sheet, for example *"Sheets ownership transfer"*.
 2. Open **Extensions → Apps Script**.
 3. Delete the sample code, paste in the full contents of the script you want, and click **Save**.
-4. Go back to the sheet and **reload the page**. A new menu appears in the menu bar: **Ownership Transfer** for Sheets and Docs, **Drive Transfer** for Drive.
+4. Go back to the sheet and **reload the page**. A new menu appears in the menu bar: **Ownership Transfer** for Sheets, Docs and Slides, **Drive Transfer** for Drive.
 5. Run **1. List…** from that menu. Google will ask you to authorize the script. Approve it to let the script see and manage your Drive files and edit this spreadsheet. You only need to do this once per spreadsheet.
 
 **Always run the steps from the menu in the sheet**, not from the Apps Script editor. Confirmation pop-ups and prompts can only appear in the sheet.
@@ -57,7 +59,7 @@ Each script works the same way:
 
 ## Tutorial: your first handover
 
-This tutorial uses the **Drive script** from start to finish, in a typical situation. The Sheets and Docs scripts work the same way, just with fewer columns. It takes about 15 minutes, plus waiting time.
+This tutorial uses the **Drive script** from start to finish, in a typical situation. The Sheets, Docs and Slides scripts work the same way, just with fewer columns. It takes about 15 minutes, plus waiting time.
 
 **The situation:** you're moving to a new role. Here's what needs to happen:
 - Your **Client Projects** folder, and everything in it, goes to **Priya** (`priya@yourcompany.com`).
@@ -139,7 +141,7 @@ For each draft you want to get rid of, type `Delete` in column **H** (*Status*).
 
 That's it: the handover is done, with a record in the spreadsheet of what went where. Keep the spreadsheet for reference.
 
-> **Using the Sheets or Docs script instead?** Follow the same tutorial, but skip steps 3 and 5 (those features are only in the Drive script). The email column is **E** instead of G, Status is **F** instead of H, and Notes is **G** instead of I. Messages appear as small notices in the bottom-right corner rather than pop-ups.
+> **Using the Sheets, Docs or Slides script instead?** Follow the same tutorial, but skip steps 3 and 5 (those features are only in the Drive script). The email column is **E** instead of G, Status is **F** instead of H, and Notes is **G** instead of I, and the progress box is in **I1** instead of K1.
 
 ---
 
@@ -152,6 +154,7 @@ The script uses Apps Script's built-in Drive service (`DriveApp`) to search for 
 | --- | --- |
 | Sheets | `mimeType = 'application/vnd.google-apps.spreadsheet' and 'me' in owners and trashed = false` |
 | Docs | `mimeType = 'application/vnd.google-apps.document' and 'me' in owners and trashed = false` |
+| Slides | `mimeType = 'application/vnd.google-apps.presentation' and 'me' in owners and trashed = false` |
 | Drive | `'me' in owners and trashed = false`, run once for folders and once for files |
 
 Each result is written as one row. The spreadsheet running the script is skipped, so it doesn't list itself.
@@ -196,11 +199,11 @@ Lists every **Google Sheet** you own and transfers the ones you choose.
 ### Menu
 | Menu item | What it does |
 | --- | --- |
-| **1. List my Google Sheets** | Clears the `Ownership Transfer` tab and lists every Google Sheet you own. If it reaches the time limit, run it again to continue. |
+| **1. List my Google Sheets** | Lists every Google Sheet you own in the `Ownership Transfer` tab. If it reaches the time limit, run it again to continue. If the listing already finished, it **asks before wiping** the tab. |
 | **2. Transfer ownership** | Transfers every row that has an email and isn't Done, Delete or Trashed. |
 | **3. Move sheets marked "Delete" to Trash** | Shows a confirmation pop-up with the list, then trashes every row whose Status is `Delete`. |
 | **Build name → email lookup (for @ chips)** | Creates or updates a `Name lookup` tab. See [Using @ people chips](#using--people-chips). |
-| **Restart listing from scratch** | Throws away a half-finished listing and starts again. |
+| **Restart listing from scratch** | Throws away a half-finished listing and starts again. If the tab already has a finished list, it asks first. |
 
 ### Columns
 | Col | Header | Filled by | Notes |
@@ -212,16 +215,19 @@ Lists every **Google Sheet** you own and transfers the ones you choose.
 | **E** | **New owner email** | **You** | Email as plain text (convert @ chips first), or blank to skip |
 | **F** | **Status** | Script / you | Script writes Done / Error / Trashed. You type `Delete`. |
 | G | Notes | Script | What happened, or the error reason |
+| I1 | *(progress box)* | Script | Live progress while a step runs |
 
 ### Steps
-1. **Ownership Transfer → 1. List my Google Sheets.** A notice in the bottom-right corner says when it's complete, or that you need to run it again.
+1. **Ownership Transfer → 1. List my Google Sheets.** Watch the progress box in **I1**. A pop-up tells you when it's complete, or that you need to run it again.
 2. Fill in column E. Delete any rows you don't want, or just leave their email blank.
-3. **2. Transfer ownership.** Watch column F fill with Done or Error.
+3. **2. Transfer ownership.** Watch column F fill with Done or Error, and I1 count up. Run it again until I1 says ✅.
 4. Optional: type `Delete` in column F for sheets you want gone, then **3. Move sheets marked "Delete" to Trash**.
 
-> ⚠️ **Don't run "1. List my Google Sheets" again once you've started filling in emails.** It clears the tab and rebuilds the list, and your emails and statuses are lost. The exception is when it told you to run it again to continue an unfinished listing. If you need sheets created since then, set up a fresh spreadsheet.
+> **Running "1. List my Google Sheets" again is safe.** If an earlier listing stopped part-way, it continues. If the listing already finished, it asks before wiping the tab: click **Cancel** to keep your list, emails and statuses, or **OK** only if you want to start again from scratch. **Restart listing from scratch** asks the same question. If you need sheets you've created since the list was made, set up a fresh spreadsheet so your existing list is kept.
 
-Notices in this script are small corner messages that disappear after about 10 seconds. To check whether a run has finished, see [Is it still running?](#is-it-still-running).
+### Progress and messages
+- **Box I1** updates while a step runs. It's yellow while working, for example `⏳ Listing Google Sheets… 300 so far (updated 18:04:12)` or `⏳ Transferring… 45 done, 0 errors (row 61)`, and green when finished (`✅ Listing complete: 412 Google Sheets`). If it reaches the time limit, it shows `⏸ Paused … run again`.
+- **Pop-ups** at the end of each run stay until you click OK.
 
 ---
 
@@ -233,19 +239,41 @@ This works the same as the Sheets script, but lists **Google Docs** instead. The
 
 | Menu item | What it does |
 | --- | --- |
-| **1. List my Google Docs** | Clears the tab and lists every Google Doc you own. Run it again to continue if it reaches the time limit. |
+| **1. List my Google Docs** | Lists every Google Doc you own. Run it again to continue if it reaches the time limit. If the listing already finished, it **asks before wiping** the tab. |
 | **2. Transfer ownership** | Transfers every row with an email that isn't Done, Delete or Trashed. |
 | **3. Move docs marked "Delete" to Trash** | Confirms, then trashes rows marked `Delete`. |
 | **Build name → email lookup (for @ chips)** | See [Using @ people chips](#using--people-chips). |
-| **Restart listing from scratch** | Starts the listing again. |
+| **Restart listing from scratch** | Starts the listing again. If the tab already has a finished list, it asks first. |
 
-Columns are the same as the Sheets script: **E = New owner email, F = Status, G = Notes.**
+Columns are the same as the Sheets script: **E = New owner email, F = Status, G = Notes**, with the live **progress box in I1** and pop-ups at the end of each run.
 
-> Use a **different spreadsheet** from the Sheets script. Both create a tab called `Ownership Transfer`.
+> Use a **different spreadsheet** from the Sheets and Slides scripts. They all create a tab called `Ownership Transfer`.
 
 ---
 
-## 3. Drive script
+## 3. Slides script
+
+**File:** `scripts/transfer_slides_ownership.gs`  **Menu:** Ownership Transfer  **Tab created:** `Ownership Transfer`
+
+This works the same as the Sheets script, but lists **Google Slides presentations** instead. The menu, columns, steps and warnings are the same:
+
+| Menu item | What it does |
+| --- | --- |
+| **1. List my Google Slides** | Lists every Google Slides presentation you own. Run it again to continue if it reaches the time limit. If the listing already finished, it **asks before wiping** the tab. |
+| **2. Transfer ownership** | Transfers every row with an email that isn't Done, Delete or Trashed. |
+| **3. Move presentations marked "Delete" to Trash** | Confirms, then trashes rows marked `Delete`. |
+| **Build name → email lookup (for @ chips)** | See [Using @ people chips](#using--people-chips). |
+| **Restart listing from scratch** | Starts the listing again. If the tab already has a finished list, it asks first. |
+
+Columns are the same as the Sheets script: **E = New owner email, F = Status, G = Notes**, with the live **progress box in I1** and pop-ups at the end of each run.
+
+> Use a **different spreadsheet** from the Sheets and Docs scripts. They all create a tab called `Ownership Transfer`.
+
+> This script lists **Google Slides** files only. PowerPoint (`.pptx`) files stored in Drive aren't included; use the Drive script for those.
+
+---
+
+## 4. Drive script
 
 **File:** `scripts/transfer_drive_ownership.gs`  **Menu:** Drive Transfer  **Tab created:** `Drive Ownership Transfer`
 
@@ -311,7 +339,7 @@ Lists **everything you own in My Drive**, folders and files of every type, with 
 
 The method that works is to use chips to pick people, then **convert them to plain text** before transferring:
 
-1. In the new owner email column (**E** for Sheets and Docs, **G** for Drive), type `@`, start typing the person's name, and pick them from the list. Do this for every row you want to hand over. The chip makes it easy to pick the right colleague without typing their full email.
+1. In the new owner email column (**E** for Sheets, Docs and Slides, **G** for Drive), type `@`, start typing the person's name, and pick them from the list. Do this for every row you want to hand over. The chip makes it easy to pick the right colleague without typing their full email.
 2. **Select the whole column** by clicking the column letter at the top.
 3. **Right-click → Remove smart chip.** Each chip turns into plain text showing the person's email address, for example `vama.shah@yourcompany.com`.
 4. Check that the column now shows email addresses, then run **2. Transfer ownership**.
@@ -356,12 +384,12 @@ The script deliberately **doesn't** look names up in your company directory. Two
 | `That is your own email` | The email is your own address. Enter the new owner's email. |
 | `Could not trash: …` | The item couldn't be moved to Trash. Its Status stays `Delete`, so it's tried again on the next run. |
 | "Not finished yet" / ⏸ Paused | The run reached the time limit. Run the same menu item again. |
-| "Listing is already complete" (Drive) | The tab already has a finished list. Click **Cancel** to keep it, or **OK** only if you want to wipe it and list again. |
+| "Listing is already complete" | The tab already has a finished list. Click **Cancel** to keep it, or **OK** only if you want to wipe it and list again. |
 
 ### Is it still running?
 - When a step is started from the menu, Google Sheets shows a **"Running script"** bar at the top of the sheet until it finishes.
 - **Extensions → Apps Script → Executions** (left sidebar) lists every run. *Running* means it's still going. *Completed* in under about 5 minutes means it finished. *Completed* at about 5 minutes means it reached the time limit, so run it again. *Failed* means you can click it to see the error.
-- In the Drive script, check the **K1** progress box.
+- Check the progress box: **I1** in the Sheets, Docs and Slides scripts, **K1** in the Drive script. Its "updated" time changes every few seconds while a step is running.
 
 ---
 

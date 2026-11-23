@@ -98,6 +98,20 @@ function listMySheets() {
   if (token) {
     files = DriveApp.continueFileIterator(token);
   } else {
+    if (sh && sh.getLastRow() > 1) {
+      // Listing already finished earlier: don't wipe emails/statuses without asking.
+      let proceed = false;
+      try {
+        const ui = SpreadsheetApp.getUi();
+        proceed = ui.alert('Listing is already complete',
+          `The tab already has ${sh.getLastRow() - 1} Google Sheets, so the earlier listing finished.\n\n` +
+          'Click OK only if you want to WIPE the tab (including emails and statuses) and list again from scratch. ' +
+          'Otherwise click Cancel.', ui.ButtonSet.OK_CANCEL) === ui.Button.OK;
+      } catch (e) {
+        console.log('Listing already complete; nothing done. Use "Restart listing from scratch" to start over.');
+      }
+      if (!proceed) return;
+    }
     if (!sh) sh = ss.insertSheet(SHEET_NAME);
     sh.clear();
     sh.getRange(1, 1, 1, HEADERS.length).setValues([HEADERS]).setFontWeight('bold');

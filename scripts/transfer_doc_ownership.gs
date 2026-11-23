@@ -4,7 +4,7 @@
  * Step 1 (menu → "1. List my Google Docs"):
  *   Lists every Google Doc you own into a tab called "Ownership Transfer".
  * Step 2: Type the new owner's email in column E ("New owner email") for each
- *   sheet you want to hand over. Leave it blank to skip that sheet.
+ *   doc you want to hand over. Leave it blank to skip it.
  * Step 3 (menu → "2. Transfer ownership"):
  *   For each row with an email, gives that person edit access, then makes
  *   them the owner. Writes Done / Error to the Status column.
@@ -98,6 +98,20 @@ function listMyDocs() {
   if (token) {
     files = DriveApp.continueFileIterator(token);
   } else {
+    if (sh && sh.getLastRow() > 1) {
+      // Listing already finished earlier: don't wipe emails/statuses without asking.
+      let proceed = false;
+      try {
+        const ui = SpreadsheetApp.getUi();
+        proceed = ui.alert('Listing is already complete',
+          `The tab already has ${sh.getLastRow() - 1} Google Docs, so the earlier listing finished.\n\n` +
+          'Click OK only if you want to WIPE the tab (including emails and statuses) and list again from scratch. ' +
+          'Otherwise click Cancel.', ui.ButtonSet.OK_CANCEL) === ui.Button.OK;
+      } catch (e) {
+        console.log('Listing already complete; nothing done. Use "Restart listing from scratch" to start over.');
+      }
+      if (!proceed) return;
+    }
     if (!sh) sh = ss.insertSheet(SHEET_NAME);
     sh.clear();
     sh.getRange(1, 1, 1, HEADERS.length).setValues([HEADERS]).setFontWeight('bold');
@@ -134,7 +148,7 @@ function listMyDocs() {
   props.deleteProperty(TOKEN_KEY);
   sh.autoResizeColumns(1, HEADERS.length);
   progress_(sh, `✅ Listing complete: ${sh.getLastRow() - 1} Google Docs`);
-  notify_(`Done: ${sh.getLastRow() - 1} sheets listed. Now fill in column E.`, 'Listing complete', 10);
+  notify_(`Done: ${sh.getLastRow() - 1} docs listed. Now fill in column E.`, 'Listing complete', 10);
 }
 
 function writeRows_(sh, rows) {
@@ -210,7 +224,7 @@ function isDeleteStatus_(status) {
 }
 
 /**
- * Step 3: moves every sheet whose Status (column F) is "Delete" to Trash.
+ * Step 3: moves every doc whose Status (column F) is "Delete" to Trash.
  * Asks for confirmation first. Trashed files can be restored from Drive's
  * Trash for 30 days. Rows become "Trashed" and are skipped on later runs.
  */
