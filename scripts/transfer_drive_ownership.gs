@@ -230,8 +230,8 @@ function transferOwnership() {
     const r = i + 1;
     try {
       if (!EMAIL_RE.test(email)) {
-        throw new Error('Could not read an email from "' + email + '". Run "Build name → email lookup" ' +
-          'and fill in this person\'s email there, or type the email as plain text.');
+        throw new Error('Could not read an email from "' + email + '". If this is an @ chip, select the email column, right-click → Remove smart chip ' +
+          'so it shows the email, then run the transfer again. Or type the email as plain text.');
       }
       if (email === me) throw new Error('That is your own email');
 

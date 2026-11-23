@@ -59,7 +59,7 @@ function buildNameLookup() {
   if (newNames.length) lk.getRange(lk.getLastRow() + 1, 1, newNames.length, 2).setValues(newNames);
   lk.autoResizeColumns(1, 2);
   ss.setActiveSheet(lk);
-  ss.toast(`${newNames.length} new name(s) added. Fill in the Email column, then run "2. Transfer ownership".`, 'Lookup ready', 10);
+  notify_(`${newNames.length} new name(s) added. Fill in the Email column, then run "2. Transfer ownership".`, 'Lookup ready', 10);
 }
 
 function loadLookup_() {
@@ -110,23 +110,31 @@ function listMySheets() {
   const thisId = ss.getId();
   const start = Date.now();
   const rows = [];
+  ss.toast('Listing… watch the progress box in the top-right of the tab.', 'Ownership Transfer', 15);
+  progress_(sh, `⏳ Listing Google Sheets… ${sh.getLastRow() - 1} so far`);
 
   while (files.hasNext()) {
     if (Date.now() - start > TIME_LIMIT_MS) {
       writeRows_(sh, rows);
       props.setProperty(TOKEN_KEY, files.getContinuationToken());
-      ss.toast(`Listed ${sh.getLastRow() - 1} so far. Run "1. List my Google Sheets" again to continue.`, 'Not finished yet', 10);
+      progress_(sh, `⏸ Paused at ${sh.getLastRow() - 1}. Run "1. List my Google Sheets" again to continue.`);
+      notify_(`Listed ${sh.getLastRow() - 1} so far. Run "1. List my Google Sheets" again to continue.`, 'Not finished yet', 10);
       return;
     }
     const f = files.next();
     if (f.getId() === thisId) continue; // skip this control sheet itself
     rows.push([f.getName(), f.getId(), f.getUrl(), f.getLastUpdated(), '', '', '']);
+    if (rows.length >= 100) {
+      writeRows_(sh, rows); rows.length = 0;
+      progress_(sh, `⏳ Listing Google Sheets… ${sh.getLastRow() - 1} so far`);
+    }
   }
 
   writeRows_(sh, rows);
   props.deleteProperty(TOKEN_KEY);
   sh.autoResizeColumns(1, HEADERS.length);
-  ss.toast(`Done: ${sh.getLastRow() - 1} sheets listed. Now fill in column E.`, 'Listing complete', 10);
+  progress_(sh, `✅ Listing complete: ${sh.getLastRow() - 1} Google Sheets`);
+  notify_(`Done: ${sh.getLastRow() - 1} sheets listed. Now fill in column E.`, 'Listing complete', 10);
 }
 
 function writeRows_(sh, rows) {
@@ -151,6 +159,8 @@ function transferOwnership() {
   const me = Session.getActiveUser().getEmail().toLowerCase();
   const start = Date.now();
   let done = 0, failed = 0;
+  ss.toast('Transferring… watch the progress box in the top-right of the tab.', 'Ownership Transfer', 15);
+  progress_(sh, '⏳ Transferring… starting');
 
   for (let i = 1; i < data.length; i++) {
     const row = data[i];
@@ -159,15 +169,16 @@ function transferOwnership() {
     if (!email || status === 'Done' || isDeleteStatus_(status)) continue;
 
     if (Date.now() - start > TIME_LIMIT_MS) {
-      ss.toast(`${done} transferred, ${failed} errors so far. Run "2. Transfer ownership" again to continue.`, 'Not finished yet', 10);
+      progress_(sh, `⏸ Paused: ${done} transferred, ${failed} errors this run. Run "2. Transfer ownership" again.`);
+      notify_(`${done} transferred, ${failed} errors so far. Run "2. Transfer ownership" again to continue.`, 'Not finished yet', 10);
       return;
     }
 
     const r = i + 1;
     try {
       if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
-        throw new Error('Could not read an email from "' + email + '". Run "Build name → email lookup" ' +
-          'and fill in this person\'s email there, or type the email as plain text.');
+        throw new Error('Could not read an email from "' + email + '". If this is an @ chip, select the email column, right-click → Remove smart chip ' +
+          'so it shows the email, then run the transfer again. Or type the email as plain text.');
       }
       if (email === me) throw new Error('That is your own email');
 
@@ -185,10 +196,11 @@ function transferOwnership() {
       sh.getRange(r, COL.STATUS, 1, 2).setValues([['Error', e.message]]);
       failed++;
     }
-    if ((done + failed) % 20 === 0) SpreadsheetApp.flush(); // show progress as it goes
+    if ((done + failed) % 5 === 0) progress_(sh, `⏳ Transferring… ${done} done, ${failed} errors (row ${r})`);
   }
 
-  ss.toast(`Finished: ${done} transferred, ${failed} errors (see Notes column).`, 'Transfer complete', 10);
+  progress_(sh, `✅ Transfer run complete: ${done} transferred, ${failed} errors`);
+  notify_(`Finished: ${done} transferred, ${failed} errors (see Notes column).`, 'Transfer complete', 10);
 }
 
 /** True for rows marked for deletion ("Delete") or already trashed ("Trashed"). */
@@ -229,14 +241,17 @@ function trashMarkedFiles() {
 
   const start = Date.now();
   let done = 0, failed = 0;
+  progress_(sh, `⏳ Moving ${targets.length} item(s) to Trash…`);
   for (const i of targets) {
     if (Date.now() - start > TIME_LIMIT_MS) {
-      ss.toast(`${done} trashed so far. Run "3. Move sheets marked Delete to Trash" again to continue.`, 'Not finished yet', 10);
+      progress_(sh, `⏸ Paused: ${done} trashed. Run "3. Move sheets marked Delete to Trash" again.`);
+      notify_(`${done} trashed so far. Run "3. Move sheets marked Delete to Trash" again to continue.`, 'Not finished yet', 10);
       return;
     }
     const r = i + 1;
     try {
       DriveApp.getFileById(data[i][COL.ID - 1]).setTrashed(true);
+      if ((done + 1) % 5 === 0) progress_(sh, `⏳ Trashing… ${done + 1} of ${targets.length}`);
       sh.getRange(r, COL.STATUS, 1, 2).setValues([['Trashed', 'Moved to Trash ' + new Date().toLocaleString()]]);
       done++;
     } catch (e) {
@@ -245,7 +260,8 @@ function trashMarkedFiles() {
       failed++;
     }
   }
-  ss.toast(`Finished: ${done} moved to Trash, ${failed} errors (see Notes column).`, 'Trash complete', 10);
+  progress_(sh, `✅ Trash run complete: ${done} moved to Trash, ${failed} errors`);
+  notify_(`Finished: ${done} moved to Trash, ${failed} errors (see Notes column).`, 'Trash complete', 10);
 }
 
 /**
@@ -270,4 +286,32 @@ function extractEmail_(value, rich, lookup) {
   const key = text.toLowerCase();
   if (lookup && lookup[key]) return lookup[key];
   return key;
+}
+
+/**
+ * Live progress box in the top-right of the tab (cell I1, two columns right of
+ * the data), updated while a step runs so you can see it's working.
+ */
+function progress_(sh, text) {
+  const time = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'HH:mm:ss');
+  sh.getRange(1, HEADERS.length + 2)
+    .setValue(text + '   (updated ' + time + ')')
+    .setFontWeight('bold')
+    .setBackground(text.startsWith('✅') ? '#d9ead3' : '#fff2cc');
+  SpreadsheetApp.flush();
+}
+
+/**
+ * Shows a pop-up that stays until you click OK. If the script was run from the
+ * Apps Script editor (where pop-ups can't appear), falls back to a corner notice.
+ */
+function notify_(message, title) {
+  title = title || 'Ownership Transfer';
+  console.log(title + ': ' + message);
+  try {
+    const ui = SpreadsheetApp.getUi();
+    ui.alert(title, message, ui.ButtonSet.OK);
+  } catch (e) {
+    SpreadsheetApp.getActive().toast(message, title, 30);
+  }
 }
