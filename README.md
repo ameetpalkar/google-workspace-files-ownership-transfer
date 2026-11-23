@@ -363,13 +363,13 @@ Lists **everything you own in My Drive**, folders and files of every type, with 
 
 ## Using @ people chips
 
-**The scripts can't read @ people chips directly.** A chip usually shows the person's _name_, for example "Vama Shah", and the script can't get the email address behind it. Rows that still contain chips will show `Error: Could not read an email from "vama shah"`.
+**The scripts can't read @ people chips directly.** A chip usually shows the person's _name_, for example "Priya Sharma", and the script can't get the email address behind it. Rows that still contain chips will show `Error: Could not read an email from "priya sharma"`.
 
 The method that works is to use chips to pick people, then **convert them to plain text** before transferring:
 
 1. In the new owner email column (**E** for Sheets, Docs and Slides, **G** for Drive), type `@`, start typing the person's name, and pick them from the list. Do this for every row you want to hand over. The chip makes it easy to pick the right colleague without typing their full email.
 2. **Select the whole column** by clicking the column letter at the top.
-3. **Right-click → Remove smart chip.** Each chip turns into plain text showing the person's email address, for example `vama.shah@yourcompany.com`.
+3. **Right-click → Remove smart chip.** Each chip turns into plain text showing the person's email address, for example `priya.sharma@yourcompany.com`.
 4. Check that the column now shows email addresses, then run **2. Transfer ownership**.
 
 If rows already show `Error` because of chips, do steps 2–4 and run the transfer again. Error rows are retried automatically.
@@ -448,3 +448,9 @@ Transfers take a few seconds each, about 100–150 per 5-minute run, so 200 file
 
 **Can I undo a transfer?**
 Not yourself. The new owner has to transfer it back to you. Trashed items can be restored from Drive's Trash for 30 days, after which Google deletes them permanently.
+
+---
+
+## License
+
+Released under the [MIT License](LICENSE). You're free to use, copy, modify and share these scripts, including at work, as long as the copyright notice is kept. They come with no warranty: test on a few files first, because ownership transfers can't be undone by the previous owner.

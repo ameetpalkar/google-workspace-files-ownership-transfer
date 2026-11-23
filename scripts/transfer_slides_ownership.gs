@@ -296,7 +296,7 @@ function extractEmail_(value, rich, lookup) {
   const text = String(value).trim();
   const match = text.match(EMAIL_RE);
   if (match) return match[0].toLowerCase();
-  // 3. A name (e.g. a chip showing "Vama Shah"): use the Name lookup tab.
+  // 3. A name (e.g. a chip showing "Priya Sharma"): use the Name lookup tab.
   const key = text.toLowerCase();
   if (lookup && lookup[key]) return lookup[key];
   return key;
